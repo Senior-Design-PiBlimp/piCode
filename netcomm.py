@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 from netconstants import *	 #constants for message types, etc
+from commhandler import *
+from motor import Motor
 
 from thread import *
 import socket
