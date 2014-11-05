@@ -2,8 +2,10 @@
 
 from motor import Motor
 from time import sleep
-from thread import *
+#from thread import *
 from netconstants import *
+
+import shlex, subprocess #for spawning the streaming service
 
 import threading 
 import socket
@@ -29,6 +31,7 @@ class PacketProcessingError(Exception):
 #class which handles incoming/outgoing packets
 class CommHandler:
 	
+	stream_process = None;
 
 	motorDict = {                         #port  min    max  start rev name
 	     str(MOTOR_LEFT       ) : Motor(0, 1300, 2600, 1300, 4, "Fan Left"),
@@ -38,8 +41,8 @@ class CommHandler:
         }
 
 
-	decendLock = threading.Lock() #make sure we don't reinit before 
-	#stop_and_decend says it is safe to do so
+	#don't allow more than 1 thread to interact with motors
+	motor_lock = threading.Lock() 
 
 	@staticmethod
 	def stop_and_decend():
@@ -52,12 +55,12 @@ class CommHandler:
 		servoright = CommHandler.motorDict[str(MOTOR_RIGHT_SERVO)]
 
 		#stop the fans (and release the relays)
-		CommHandler.decendLock.acquire(True);
+		CommHandler.motor_lock.acquire(True);
 		fanleft.goMin();
 		fanright.goMin();
 		fanleft.setDir(Motor.FORWARD)
 		fanright.setDir(Motor.FORWARD)
-		CommHandler.decendLock.release()
+		CommHandler.motor_lock.release()
 		
 		#wait a few seconds 
 		sleep(TIMEOUT_SLEEP)
@@ -70,12 +73,12 @@ class CommHandler:
 			pass
 		else:
 			#set the servos to decend, and motors to match
-			CommHandler.decendLock.acquire(True);
+			CommHandler.motor_lock.acquire(True);
 			servoleft.goMin()
 			servoright.goMin()
 			fanleft.setPercent(DECEND_PERCENT)
 			fanright.setPercent(DECEND_PERCENT)
-			CommHandler.decendLock.release()
+			CommHandler.motor_lock.release()
 		
 
 
@@ -88,23 +91,31 @@ class CommHandler:
 	def process_set_pwm(self):
 
 		#process each row of the packet, minus the header and footer
-
 		if DEBUG: print "-------------------------------"
 
-		CommHandler.decendLock.acquire(True);
+		CommHandler.motor_lock.acquire(True);
+		threads = []
 		for i in range(WORD_LENGTH,PACKET_LENGTH-WORD_LENGTH,WORD_LENGTH):
 			try:
 				m = CommHandler.motorDict[str(self.data[i])]
 				m.setPercent(self.data[i+2])
-				start_new_thread(m.setDir,(self.data[i+1],))
+				t = threading.Thread(target=m.setDir, 
+						     args=(self.data[i+1],))
+			  	t.start()	
+				threads.append(t)
+				#start_new_thread(m.setDir,(self.data[i+1],))
 				#m.setDir(self.data[i+1])
+				
 				if DEBUG:
 					print "seting motor: ", m.getName();
 					print "\tdir: ",m.getDir();
 					print "\tval: ",m.getPercent(),"%"
 			except KeyError:
 				pass
-		CommHandler.decendLock.release()
+		#wait for reversing threads to join
+		[t.join() for t in threads]
+		CommHandler.motor_lock.release()
+
 		if DEBUG:
 			print "-------------------------------"
 			
@@ -129,9 +140,26 @@ class CommHandler:
 	def process_keep_alive(self):
 		pass
 
+	def process_vid_ctrl(self):
+		if DEBUG: print "vid_ctrl" 
+		
+		#start
+		if self.data[WORD_LENGTH] == VID_START:
+			CommHandler.stream_process = subprocess.Popen(
+				shlex.split(STREAM_PATH + STREAM_CMD), 
+				cwd=STREAM_PATH,
+				env=STREAM_ENV
+				)
+		
+		
+		#for i in range(WORD_LENGTH,PACKET_LENGTH-WORD_LENGTH,WORD_LENGTH):
+			#self.data[i] is first byte of first word of payload
+			
+
 	handlers = { str(TYPE_KEEP_ALIVE):process_keep_alive,
 		     str(TYPE_SET_PWM   ):process_set_pwm,
 	             str(TYPE_GET_PWM   ):process_get_pwm,
+		     str(TYPE_VID_CTRL  ):process_vid_ctrl,
 	             str(TYPE_CONN_ESTAB):process_conn_established,
 		     str(TYPE_CONN_CLOSE):process_conn_close}
                   
