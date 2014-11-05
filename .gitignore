@@ -55,6 +55,6 @@ target/
 
 #Vim files
 *.vim 
-*.swp
-*.swo
+.*.swp
+.*.swo
 
