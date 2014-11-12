@@ -3,6 +3,7 @@
 from Adafruit_PWM_Servo_Driver import PWM
 import curses
 import sys
+import atexit
 
 from motor import Motor
 

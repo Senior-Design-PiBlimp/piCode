@@ -33,11 +33,11 @@ class CommHandler:
 	
 	stream_process = None;
 
-	motorDict = {                         #port  min    max  start rev name
-	     str(MOTOR_LEFT       ) : Motor(0, 1300, 2600, 1300, 4, "Fan Left"),
-	     str(MOTOR_RIGHT      ) : Motor(1, 1300, 2600, 1300, 5, "Fan Right"),
-	     str(MOTOR_LEFT_SERVO ) : Motor(2, 1025, 2750, 2750,-1, "Servo Left"),
-	     str(MOTOR_RIGHT_SERVO) : Motor(3, 1025, 2750, 2750,-1, "Servo Right")
+	motorDict = {                   #port  min    max  start rev name
+	     str(MOTOR_LEFT       ) : Motor(0, 1300, 2600, 0,  4, "Fan Left"),
+	     str(MOTOR_RIGHT      ) : Motor(1, 1300, 2600, 0,  5, "Fan Right"),
+	     str(MOTOR_LEFT_SERVO ) : Motor(2, 1065, 2320, 100,-1,"Servo Left", True),
+	     str(MOTOR_RIGHT_SERVO) : Motor(3, 1365, 2620, 100,-1, "Servo Right")
         }
 
 
@@ -76,6 +76,8 @@ class CommHandler:
 			CommHandler.motor_lock.acquire(True);
 			servoleft.goMin()
 			servoright.goMin()
+			fanleft.setDir(Motor.REVERSE)
+			fanright.setDir(Motor.REVERSE)
 			fanleft.setPercent(DECEND_PERCENT)
 			fanright.setPercent(DECEND_PERCENT)
 			CommHandler.motor_lock.release()
@@ -194,9 +196,10 @@ class CommHandler:
 			#so - drop the connection and raise the error
 
 			if DEBUG: print "Socket Timed Out"
-			#self.socket.shutdown(socket.SHUT_RDWR)
-			#raise ConnectionDroppedError("Timeout Disconnect");
-			#return;
+			if ENFORCE_TIMEOUT:
+				self.socket.shutdown(socket.SHUT_RDWR)
+				raise ConnectionDroppedError("Timeout Disconnect");
+			return;
 
 		except socket.error as err:
 			raise ConnectionDroppedError("Exexpected Disconnect");

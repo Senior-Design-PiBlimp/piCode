@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 DEBUG             = True
+ENFORCE_TIMEOUT   = True
 
 WORD_LENGTH	  = 4
 PACKET_LENGTH     = (WORD_LENGTH*32)     #4 bytes * 32 words
@@ -34,7 +35,7 @@ DECEND_PERCENT    = 15 #motor speed when in auto_decend
 
 
 
-STREAM_ENV        = {"LD_LIBRARY_PATH":, "."}
+STREAM_ENV        = {"LD_LIBRARY_PATH": "."}
 STREAM_PATH       = "/usr/src/mjpg-streamer/mjpg-streamer-experimental/"
 STREAM_CMD        = "mjpg_streamer -o 'output_http.so -w ./www' -i 'input_raspicam.so -x 640 -y 480 -fps 20  -ex sports -quality 10 -mm matrix -rot 90'"
 

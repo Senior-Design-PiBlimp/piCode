@@ -30,12 +30,13 @@ class Motor:
 			Motor.pwm.setPWMFreq(Motor.freq)
 			Motor.init = True
 
-	def __init__(self, pwmport, setMin, setMax, startVal=0, revPort=-1, name=""):
+	def __init__(self, pwmport, setMin, setMax, startVal=0, revPort=-1, name="", inv=False):
 		if (netconstants.DEBUG): print "Init Motor: ", name, " on ", pwmport
 		Motor.initPWM();
 
 		self.port = pwmport;
 		self.revPort = revPort;
+		self.invert = inv; #invert the percentage (100 <-> 0)
 
 		self.name = name;
 
@@ -45,14 +46,15 @@ class Motor:
 
 		#for documentation purposes, note these vars are available
 		self.direction = Motor.FORWARD;
-		self.value = startVal;
+		self.value = 0;
+		self.resting = False;   #true if motors are 'reversed' but off
 	
 		self.reset();
 
 	#reset to default state
 	def reset(self):
 		self.setDir(Motor.FORWARD);
-		self.setValue(self.startValue);
+		self.setPercent(self.startValue);
 
 	def getName(self):
 		return self.name;
@@ -63,20 +65,25 @@ class Motor:
 		return self.value;
 
 	def getPercent(self):
-		return (float(self.value - self.pwmmin) / 
+		
+		p = (float(self.value - self.pwmmin) / 
 			float(self.pwmmax - self.pwmmin)) * 100;
+		if self.invert: return 100-p
+		else: return p
 
 	#percent is an integer [0-100]
 	def setPercent(self, percent):
 
+		if self.invert: percent = 100 - percent
+
 		if percent < 0 or percent > 100:
 			return -1
 
-		return self.setValue(self.pwmmin + 
+		return self._setValue(self.pwmmin + 
 			int(float(self.pwmmax - self.pwmmin) *
 			 float(float(percent)/float(100))))
 
-	def setValue(self, newvalue):
+	def _setValue(self, newvalue):
 
 		ret = 0 ;
 		if(newvalue < self.pwmmin):
@@ -88,7 +95,18 @@ class Motor:
 		else:
 			self.value=newvalue;
 
-		self.pwm.setPWM(self.port, 0, self.value)
+		Motor.pwm.setPWM(self.port, 0, self.value)
+		'''
+		#if we are in the reverse state and we are off, 
+		#go ahead and turn off the relay to save power
+		if self.direction == Motor.REVERSE:
+			if self.value == self.pwmmin: 
+				self._forwardRelay()		
+				self.resting = True
+			elif self.resting:
+				self._revRelay()
+				self.resting = False
+		'''
 
 	        return ret;
 
@@ -97,30 +115,24 @@ class Motor:
 	def setMax(self, newmax):
 		self.pwmmax = newmax;
 	def goMax(self):
-		self.setValue(self.pwmmax);
-		return True;
-
+		return self.setPercent(100);
 	def getMin(self):
 		return self.pwmmin;
 	def setMin(self, newmin):
 		self.pwmmin = newmin;
 	def goMin(self):
-		self.setValue(self.pwmmin);
-		return True
-
+		return self.setPercent(0);
 	def goHalf(self):
-		self.setValue(self.pwmmin + ((self.pwmmax - self.pwmmin) / 2));
-		return True
-			
+		return self.setPercent(50);
 
 	def incr(self, incr=10):
-		return self.setValue(self.value + incr);
+		return self._setValue(self.value + incr);
 
 	def decr(self, decr=10):
-		return self.setValue(self.value - decr);
+		return self._setValue(self.value - decr);
 
 	def setFreq(self, freq):
-		return pwm.setPWMFreq(freq);
+		return Motor.pwm.setPWMFreq(freq);
 	
 
 
@@ -143,27 +155,32 @@ class Motor:
 			if(self.direction == Motor.REVERSE and prevval != self.getMin()):
 				self.goMin();
 				sleep(Motor.STOPTIME);
-				self.pwm.setPWM(self.revPort,0,0)
+				self._forwardRelay()
 				self.direction = Motor.FORWARD
-				self.setValue(prevval);
+				self._setValue(prevval);
 			else:
-				self.pwm.setPWM(self.revPort, 0, 0)
+				self._forwardRelay()
 				self.direction = Motor.FORWARD
 		elif (d==Motor.REVERSE):
 			if (netconstants.DEBUG): print "\tREVERSE"
 			if(self.direction == Motor.FORWARD and prevval != self.getMin()):
 				self.goMin();
 				sleep(Motor.STOPTIME);
-				self.pwm.setPWM(self.revPort, 4096, 0)
+				self._revRelay()
 				self.direction = Motor.REVERSE
-				self.setValue(prevval);
+				self._setValue(prevval);
 			else:
-				self.pwm.setPWM(self.revPort, 4096, 0)
+				self._revRelay()
 				self.direction = Motor.REVERSE
 		elif (d==0):
 			if (netconstants.DEBUG): print "\tNO CHANGE"
 		else:
 			if (netconstants.DEBUG): print "\tERROR"
+
+	def _revRelay(self):
+		Motor.pwm.setPWM(self.revPort, 4096, 0)
+	def _forwardRelay(self):
+		Motor.pwm.setPWM(self.revPort,0,0)
 
 	def getDir(self):
 		return self.direction
