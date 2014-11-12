@@ -2,19 +2,9 @@
 
 from Adafruit_PWM_Servo_Driver import PWM
 import curses
-import signal
 import sys
 
 from motor import Motor
-
-
-		
-#handle SIGINT (pressing ^C on the keyboard)
-def signal_handler(signal, frame):
-	curses.endwin()
-	sys.exit(0)
-signal.signal(signal.SIGINT, signal_handler)
-
 
 
 fan1   = Motor(0, 1300, 2600, 1300,  4, "Fan 1");
@@ -25,6 +15,7 @@ servo2 = Motor(3, 1025, 2750, 1025, -1, "Servo 2");
 
 
 stdscr = curses.initscr()
+atexit.register(curses.endwin)
 curses.noecho()
 stdscr.move(10,0);
 stdscr.insstr("q: exit | w: max | s: min | h: half | p: off | 0-9: select output")
