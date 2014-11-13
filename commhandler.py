@@ -5,10 +5,13 @@ from time import sleep
 #from thread import *
 from netconstants import *
 
-import shlex, subprocess #for spawning the streaming service
+import shlex, subprocess, signal #for spawning the streaming service
 
 import threading 
 import socket
+import atexit
+
+import psutil
 
 
 connCount         = threading.Event();
@@ -32,6 +35,9 @@ class PacketProcessingError(Exception):
 class CommHandler:
 	
 	stream_process = None;
+	atexit_registered = False;
+
+	
 
 	motorDict = {                   #port  min    max  start rev name
 	     str(MOTOR_LEFT       ) : Motor(0, 1300, 2600, 0,  4, "Fan Left"),
@@ -83,12 +89,56 @@ class CommHandler:
 			CommHandler.motor_lock.release()
 		
 
+	@staticmethod
+	def startVideo():
+
+		#make sure we kill the process on exit
+		if CommHandler.atexit_registered == False:
+			atexit.register(CommHandler.stopVideo)
+			CommHandler.atexit_registered = True
+		
+		if CommHandler.stream_process != None:
+			#check to see if we have a streaming process
+			if CommHandler.stream_process.poll() == None:
+				if DEBUG: print "Video already running!"
+				return False
+		else:
+			#check to see if an orphaned process exists
+			for p in psutil.process_iter():
+				if p.name == STREAM_PROC_NAME:
+					if DEBUG: print "Orphaned process discovered!"
+					return false
+	
+		CommHandler.stream_process = subprocess.Popen(
+			shlex.split(STREAM_PATH + STREAM_CMD), 
+			cwd=STREAM_PATH,
+			env=STREAM_ENV)
+
+	@staticmethod
+	def stopVideo():
+		if CommHandler.stream_process == None:
+			#check to see if an orphaned process exists
+			for p in psutil.process_iter():
+				if p.name == STREAM_PROC_NAME:
+					if DEBUG: print "Orphaned process discovered!"
+					p.send_signal(signal.SIGINT)
+					return True
+			if DEBUG: print "no video process discovered"
+			return False
+		else:
+			#simply send SIGINT
+			CommHandler.stream_process.send_signal(signal.SIGINT)
+			return True
+
+
 
 	def __init__(self,s):
 		self.data=bytearray(PACKET_LENGTH);
 		self.socket = s;
 		self.socket.settimeout(1); 
 		self.send_conn_established();
+
+
 
 	def process_set_pwm(self):
 
@@ -100,6 +150,7 @@ class CommHandler:
 		for i in range(WORD_LENGTH,PACKET_LENGTH-WORD_LENGTH,WORD_LENGTH):
 			try:
 				m = CommHandler.motorDict[str(self.data[i])]
+
 				m.setPercent(self.data[i+2])
 				t = threading.Thread(target=m.setDir, 
 						     args=(self.data[i+1],))
@@ -142,22 +193,27 @@ class CommHandler:
 	def process_keep_alive(self):
 		pass
 
+
 	def process_vid_ctrl(self):
 		if DEBUG: print "vid_ctrl" 
 		
-		#start
-		if self.data[WORD_LENGTH] == VID_START:
-			CommHandler.stream_process = subprocess.Popen(
-				shlex.split(STREAM_PATH + STREAM_CMD), 
-				cwd=STREAM_PATH,
-				env=STREAM_ENV
-				)
-		
-		
-		#for i in range(WORD_LENGTH,PACKET_LENGTH-WORD_LENGTH,WORD_LENGTH):
-			#self.data[i] is first byte of first word of payload
-			
+		if self.data[WORD_LENGTH] == VID_STOP:
+			if DEBUG: print "\tVID_STOP"
+			CommHandler.stopVideo();
+		elif self.data[WORD_LENGTH] == VID_START:
+			if DEBUG: print "\tVID_START"
+			CommHandler.startVideo();
 
+		elif self.data[WORD_LENGTH] == VID_RESTART:
+			if DEBUG: print "\tVID_RESTART"
+			if CommHandler.stream_process != None:
+				CommHandler.stopVideo();
+				CommHandler.stream_process.wait()
+			CommHandler.startVideo();
+		else:
+			raise PacketProcessingError("Invalid Video Command")
+			
+		
 	handlers = { str(TYPE_KEEP_ALIVE):process_keep_alive,
 		     str(TYPE_SET_PWM   ):process_set_pwm,
 	             str(TYPE_GET_PWM   ):process_get_pwm,

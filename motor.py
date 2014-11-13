@@ -96,17 +96,6 @@ class Motor:
 			self.value=newvalue;
 
 		Motor.pwm.setPWM(self.port, 0, self.value)
-		'''
-		#if we are in the reverse state and we are off, 
-		#go ahead and turn off the relay to save power
-		if self.direction == Motor.REVERSE:
-			if self.value == self.pwmmin: 
-				self._forwardRelay()		
-				self.resting = True
-			elif self.resting:
-				self._revRelay()
-				self.resting = False
-		'''
 
 	        return ret;
 
@@ -142,14 +131,17 @@ class Motor:
 	#2 - reverse
 	#as a safety feature, the motors are stopped before changing direction
 	def setDir(self, d):
+
 		if (netconstants.DEBUG):
 			print "setDir: ", d
 			print "revPort: ", self.revPort
 
 		if(self.revPort < 0 or self.revPort > 15):
 			return -1; #we cannot reverse this motor
-		
+
 		prevval = self.getValue()
+
+
 		if (d==Motor.FORWARD):
 			if (netconstants.DEBUG): print "\tFORWARD"
 			if(self.direction == Motor.REVERSE and prevval != self.getMin()):
@@ -178,9 +170,9 @@ class Motor:
 			if (netconstants.DEBUG): print "\tERROR"
 
 	def _revRelay(self):
-		Motor.pwm.setPWM(self.revPort, 4096, 0)
+			Motor.pwm.setPWM(self.revPort, 4096, 0)
 	def _forwardRelay(self):
-		Motor.pwm.setPWM(self.revPort,0,0)
+			Motor.pwm.setPWM(self.revPort,0,0)
 
 	def getDir(self):
 		return self.direction
