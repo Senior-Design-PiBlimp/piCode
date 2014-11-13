@@ -12,6 +12,7 @@ import socket
 import atexit
 
 import psutil
+import os
 
 
 connCount         = threading.Event();
@@ -36,6 +37,7 @@ class CommHandler:
 	
 	stream_process = None;
 	atexit_registered = False;
+	#DEVNULL = os.open(os.devnull, os.O_RDWR)
 
 	
 
@@ -115,6 +117,8 @@ class CommHandler:
 			shlex.split(STREAM_PATH + STREAM_CMD), 
 			cwd=STREAM_PATH,
 			env=STREAM_ENV)
+			#sdout=CommHandler.DEVNULL,
+			#sderr=CommHandler.DEVNULL,
 
 	@staticmethod
 	def stopVideo():
