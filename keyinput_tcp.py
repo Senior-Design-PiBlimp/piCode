@@ -146,6 +146,7 @@ class UI:
 
 		c = UI.stdscr.getch()
 
+		if c >= 256: return True
 		if (chr(c) == 'q'):
 			return False 
 		elif (chr(c) == 'w'):
