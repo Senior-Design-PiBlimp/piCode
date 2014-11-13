@@ -1,0 +1,38 @@
+#!/bin/sh
+
+### BEGIN INIT INFO
+# Provides:          blimp
+# Required-Start:    $network $remote_fs $syslog
+# Required-Stop:     $network $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Starts the blimp conroll at boot
+# Description:       Starts blimp coontroll server at boot
+### END INIT INFO
+
+
+# Carry out specific functions when asked to by the system
+case "$1" in
+  start)
+    #determine if its already running
+    pgrep -f netcomm.py
+    if [ "$?" = "0" ] ; then
+      echo "Process already running!"
+    else
+      echo "Starting blimp"
+      /home/pi/working/piCode/netcomm.py > /dev/null &
+    fi
+    ;;
+  stop)
+    echo "Stopping blimp"
+    killall netcomm.py
+    killall mjpg_streamer
+    /home/pi/working/piCode/stopServos.py
+    ;;
+  *)
+    echo "Usage: /etc/init.d/blimp {start|stop}"
+    exit 1
+    ;;
+esac
+
+exit 0
