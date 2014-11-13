@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 DEBUG             = True
-ENFORCE_TIMEOUT   = False
+ENFORCE_TIMEOUT   = True
 
 WORD_LENGTH	  = 4
 PACKET_LENGTH     = (WORD_LENGTH*32)     #4 bytes * 32 words
@@ -21,6 +21,8 @@ MOTOR_LEFT        = 1
 MOTOR_RIGHT       = 2
 MOTOR_LEFT_SERVO  = 3
 MOTOR_RIGHT_SERVO = 4
+MOTOR_PAN         = 5
+MOTOR_TILT        = 6
 
 DIR_IGNORE        = 0
 DIR_FWD           = 1
