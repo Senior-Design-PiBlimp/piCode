@@ -77,7 +77,7 @@ class CommHandler:
 		
 		#check to see if a connection has been established yet
 
-		print "thread connCount: ", connCount.isSet()
+		if DEBUG: print "thread connCount: ", connCount.isSet()
 
 		if connCount.isSet():
 			pass
@@ -111,7 +111,7 @@ class CommHandler:
 			for p in psutil.process_iter():
 				if p.name == STREAM_PROC_NAME:
 					if DEBUG: print "Orphaned process discovered!"
-					return false
+					return False
 	
 		CommHandler.stream_process = subprocess.Popen(
 			shlex.split(STREAM_PATH + STREAM_CMD), 
@@ -218,14 +218,18 @@ class CommHandler:
 			CommHandler.startVideo();
 		else:
 			raise PacketProcessingError("Invalid Video Command")
-			
+
+	def process_shutdown(self):
+		#yah, so just turn off the computer
+		os.system("sudo shutdown -h now")
 		
 	handlers = { str(TYPE_KEEP_ALIVE):process_keep_alive,
 		     str(TYPE_SET_PWM   ):process_set_pwm,
 	             str(TYPE_GET_PWM   ):process_get_pwm,
 		     str(TYPE_VID_CTRL  ):process_vid_ctrl,
 	             str(TYPE_CONN_ESTAB):process_conn_established,
-		     str(TYPE_CONN_CLOSE):process_conn_close}
+		     str(TYPE_CONN_CLOSE):process_conn_close,
+		     str(TYPE_SHUTDOWN  ):process_shutdown}
                   
 	def send_conn_established(self):
 		self.data[0] = TYPE_CONN_ESTAB;

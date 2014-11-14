@@ -12,25 +12,38 @@
 
 
 # Carry out specific functions when asked to by the system
+
+start_blimp() {
+  #determine if its already running
+  pgrep -f netcomm.py
+  if [ "$?" = "0" ] ; then
+    echo "Process already running!"
+  else
+    echo "Starting blimp"
+    /home/pi/working/piCode/netcomm.py > /dev/null &
+  fi
+}
+
+stop_blimp() {
+  echo "Stopping blimp"
+  killall -q netcomm.py 
+  killall -q mjpg_streamer 
+  /home/pi/working/piCode/stopServos.py
+}
+
 case "$1" in
   start)
-    #determine if its already running
-    pgrep -f netcomm.py
-    if [ "$?" = "0" ] ; then
-      echo "Process already running!"
-    else
-      echo "Starting blimp"
-      /home/pi/working/piCode/netcomm.py > /dev/null &
-    fi
+    start_blimp
     ;;
   stop)
-    echo "Stopping blimp"
-    killall netcomm.py
-    killall mjpg_streamer
-    /home/pi/working/piCode/stopServos.py
+    stop_blimp
+    ;;
+  restart)
+    stop_blimp
+    start_blimp
     ;;
   *)
-    echo "Usage: /etc/init.d/blimp {start|stop}"
+    echo "Usage: /etc/init.d/blimp {start|stop|restart}"
     exit 1
     ;;
 esac
