@@ -80,7 +80,8 @@ class BlimpClient:
 		else: return False
 		self.data[WORD_LENGTH] = cmd
 		self._send(TYPE_VID_CTRL)
-	
+	def shutdown(self):
+		self._send(TYPE_SHUTDOWN)
 	def isVidOn(self): return self.vid_on
 
 	#handles the getPWM packet
@@ -124,7 +125,7 @@ class UI:
 		UI.stdscr.move(10,0);
 		UI.stdscr.insstr("\t| w,a,s,d: fwd,left,rev,right | u: tilt up | j: tilt down | o: faster | l: slower")
 		UI.stdscr.move(11,0);
-		UI.stdscr.insstr("\t| q: exit | b: begin video | n: end video")
+		UI.stdscr.insstr("\t| q: exit | b: begin video | n: end video | y: shutdown")
 		self.showStatus()
 
 	def showStatus(self):
@@ -205,6 +206,9 @@ class UI:
 			#begin video
 			self.client.vidCtrl(VID_START)
 		elif (chr(c) == 'n'):
+			#end video
+			self.client.vidCtrl(VID_STOP)
+		elif (chr(c) == 'y'):
 			#end video
 			self.client.vidCtrl(VID_STOP)
 

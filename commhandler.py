@@ -44,8 +44,8 @@ class CommHandler:
 	motorDict = {                   #port  min   max  start rev   name       inv
 	     str(MOTOR_LEFT       ) : Motor(0, 1300, 2600, 0,   4, "Fan Left"),
 	     str(MOTOR_RIGHT      ) : Motor(1, 1300, 2600, 0,   5, "Fan Right"),
-	     str(MOTOR_LEFT_SERVO ) : Motor(2, 1065, 2320, 100,-1, "Servo Left", True),
-	     str(MOTOR_RIGHT_SERVO) : Motor(3, 1365, 2620, 100,-1, "Servo Right"),
+	     str(MOTOR_LEFT_SERVO ) : Motor(2, 1065, 2320, 100,-1, "Servo Left", False),
+	     str(MOTOR_RIGHT_SERVO) : Motor(3, 1365, 2620, 100,-1, "Servo Right", True),
 	     str(MOTOR_PAN        ) : Motor(6, 1065, 2620, 50, -1, "Tilt"),
 	     str(MOTOR_TILT       ) : Motor(7, 1065, 2620, 50, -1, "Pan")
         }

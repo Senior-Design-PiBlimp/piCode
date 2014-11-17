@@ -40,8 +40,8 @@ DECEND_PERCENT    = 15 #motor speed when in auto_decend
 
 STREAM_ENV        = {"LD_LIBRARY_PATH": "."}
 STREAM_PATH       = "/usr/src/mjpg-streamer/mjpg-streamer-experimental/"
-#STREAM_CMD        = "mjpg_streamer -o 'output_http.so -w ./www' -i 'input_raspicam.so -x 640 -y 480 -fps 20  -ex sports -quality 10 -mm matrix -rot 90'"
-STREAM_CMD        = "mjpg_streamer -o 'output_http.so -w ./www' -i 'input_raspicam.so -x 640 -y 480 -fps 10  -ex sports -quality 10 -mm matrix -rot 90'"
+STREAM_CMD        = "mjpg_streamer -o 'output_http.so -w ./www' -i 'input_raspicam.so -x 640 -y 480 -fps 20  -ex sports -quality 10 -mm matrix -rot 180'"
+#STREAM_CMD        = "mjpg_streamer -o 'output_http.so -w ./www' -i 'input_raspicam.so -x 640 -y 480 -fps 10  -ex sports -quality 10 -mm matrix -rot 90'"
 
 STREAM_PROC_NAME  = "mjpg_streamer"
 
