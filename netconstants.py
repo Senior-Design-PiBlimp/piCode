@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-DEBUG             = True
+DEBUG             = False
 ENFORCE_TIMEOUT   = True
 
 WORD_LENGTH	  = 4
